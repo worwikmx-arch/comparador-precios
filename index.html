@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ComparaSúper - Comparador de Precios</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Deshabilitar flechas de inputs numéricos en navegadores móviles */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header Principal -->
+    <header class="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="bg-brand-500 text-white p-2 rounded-xl flex items-center justify-center w-9 h-9">
+                    <i class="fa-solid fa-scale-balanced text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight text-gray-900 dark:text-white">ComparaSúper</h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">¿Cuál conviene más?</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-1">
+                <!-- Botón Historial -->
+                <button id="btn-history-toggle" onclick="toggleHistoryModal()" class="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fa-solid fa-history text-lg"></i>
+                </button>
+                <!-- Botón Modo Oscuro -->
+                <button id="btn-theme" onclick="toggleTheme()" class="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <i class="fa-solid fa-moon text-lg dark:hidden"></i>
+                    <i class="fa-solid fa-sun text-lg hidden dark:inline"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-md w-full mx-auto p-3 sm:p-4 pb-24">
+
+        <!-- Selector de Categoría/Unidad Base para Normalizar -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                Tipo de producto a comparar
+            </label>
+            <div class="grid grid-cols-4 gap-1.5" id="unit-group-selector">
+                <button onclick="setUnitGroup('weight')" id="btn-group-weight" class="unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 text-xs font-medium transition active:scale-95">
+                    <i class="fa-solid fa-weight-hanging text-base mb-1"></i>
+                    Peso (g/kg)
+                </button>
+                <button onclick="setUnitGroup('volume')" id="btn-group-volume" class="unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 text-xs font-medium transition active:scale-95">
+                    <i class="fa-solid fa-bottle-water text-base mb-1"></i>
+                    Volumen (ml/L)
+                </button>
+                <button onclick="setUnitGroup('count')" id="btn-group-count" class="unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 text-xs font-medium transition active:scale-95">
+                    <i class="fa-solid fa-boxes-packing text-base mb-1"></i>
+                    Piezas/Unid.
+                </button>
+                <button onclick="setUnitGroup('length')" id="btn-group-length" class="unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 text-xs font-medium transition active:scale-95">
+                    <i class="fa-solid fa-ruler-horizontal text-base mb-1"></i>
+                    Long. (m)
+                </button>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Productos -->
+        <div id="products-container" class="space-y-4">
+            <!-- Renderizado dinámico de tarjetas por JS -->
+        </div>
+
+        <!-- Botón para Agregar Producto Extra (hasta 4) -->
+        <div class="mt-4 flex justify-between items-center gap-2">
+            <button id="btn-add-product" onclick="addProduct()" class="flex-1 py-3 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-brand-500 dark:hover:border-brand-500 text-gray-600 dark:text-gray-300 hover:text-brand-600 rounded-2xl font-medium text-sm flex items-center justify-center gap-2 transition active:scale-98">
+                <i class="fa-solid fa-circle-plus text-base"></i>
+                <span>Agregar otra opción</span>
+            </button>
+            
+            <button onclick="resetCalculator()" class="py-3 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-2xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition active:scale-98" title="Limpiar todo">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+        </div>
+
+        <!-- Banner Guardar Comparación -->
+        <div id="save-banner" class="mt-5 hidden">
+            <button onclick="saveCurrentComparison()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-brand-500/20 flex items-center justify-center space-x-2 transition active:scale-95">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>Guardar esta comparación</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Modal de Historial -->
+    <div id="history-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[80vh] flex flex-col shadow-2xl transition-all">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-clock-rotate-left text-brand-500 text-lg"></i>
+                    <h2 class="font-bold text-lg text-gray-900 dark:text-white">Historial de Comparaciones</h2>
+                </div>
+                <button onclick="toggleHistoryModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="history-list" class="p-4 overflow-y-auto flex-1 space-y-3">
+                <!-- Se llena con JS -->
+            </div>
+
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-b-3xl">
+                <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-600 font-medium">
+                    <i class="fa-solid fa-trash-can mr-1"></i>Borrar historial
+                </button>
+                <button onclick="toggleHistoryModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-semibold">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje Toast Flotante -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-full text-xs font-semibold shadow-xl opacity-0 transition-opacity pointer-events-none z-50 flex items-center space-x-2">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-brand-500"></i>
+        <span id="toast-msg">Mensaje</span>
+    </div>
+
+    <script>
+        // --- ESTADO GLOBAL ---
+        let currentGroup = 'weight'; // 'weight', 'volume', 'count', 'length'
+        let products = [
+            { id: 1, name: 'Opción A', price: '', qty: '', unit: 'g' },
+            { id: 2, name: 'Opción B', price: '', qty: '', unit: 'kg' }
+        ];
+        let historyData = JSON.parse(localStorage.getItem('comparasuper_history') || '[]');
+
+        // Unidades por grupo
+        const UNIT_GROUPS = {
+            weight: [
+                { label: 'Gramos (g)', value: 'g', factor: 1 },
+                { label: 'Kilos (kg)', value: 'kg', factor: 1000 }
+            ],
+            volume: [
+                { label: 'Mililitros (ml)', value: 'ml', factor: 1 },
+                { label: 'Litros (L)', value: 'L', factor: 1000 }
+            ],
+            count: [
+                { label: 'Piezas (pza)', value: 'pza', factor: 1 },
+                { label: 'Docenas', value: 'docena', factor: 12 },
+                { label: 'Paquete', value: 'paq', factor: 1 }
+            ],
+            length: [
+                { label: 'Centímetros (cm)', value: 'cm', factor: 1 },
+                { label: 'Metros (m)', value: 'm', factor: 100 }
+            ]
+        };
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            initTheme();
+            renderUnitGroupSelector();
+            renderProducts();
+        };
+
+        // --- MODO OSCURO ---
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        // --- GESTIÓN DE GRUPOS DE UNIDAD ---
+        function setUnitGroup(group) {
+            currentGroup = group;
+            const defaultUnit = UNIT_GROUPS[group][0].value;
+            const altUnit = UNIT_GROUPS[group][1] ? UNIT_GROUPS[group][1].value : defaultUnit;
+
+            // Actualizar unidades por defecto para las opciones existentes
+            products.forEach((p, idx) => {
+                p.unit = (idx === 1) ? altUnit : defaultUnit;
+            });
+
+            renderUnitGroupSelector();
+            renderProducts();
+        }
+
+        function renderUnitGroupSelector() {
+            const groups = ['weight', 'volume', 'count', 'length'];
+            groups.forEach(g => {
+                const btn = document.getElementById(`btn-group-${g}`);
+                if (g === currentGroup) {
+                    btn.className = "unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-brand-500 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400 font-bold transition active:scale-95 shadow-sm";
+                } else {
+                    btn.className = "unit-group-btn flex flex-col items-center justify-center p-2 rounded-xl border-2 border-transparent bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition active:scale-95";
+                }
+            });
+        }
+
+        // --- GESTIÓN DE PRODUCTOS ---
+        function addProduct() {
+            if (products.length >= 4) {
+                showToast("Máximo 4 productos a la vez", "info");
+                return;
+            }
+            const defaultUnit = UNIT_GROUPS[currentGroup][0].value;
+            const nextLetter = String.fromCharCode(65 + products.length);
+            products.push({
+                id: Date.now(),
+                name: `Opción ${nextLetter}`,
+                price: '',
+                qty: '',
+                unit: defaultUnit
+            });
+            renderProducts();
+            
+            if (products.length >= 4) {
+                document.getElementById('btn-add-product').classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function removeProduct(id) {
+            if (products.length <= 2) {
+                showToast("Debes mantener al menos 2 opciones", "info");
+                return;
+            }
+            products = products.filter(p => p.id !== id);
+            document.getElementById('btn-add-product').classList.remove('opacity-50', 'pointer-events-none');
+            renderProducts();
+        }
+
+        function updateProduct(id, field, value) {
+            const prod = products.find(p => p.id === id);
+            if (prod) {
+                prod[field] = value;
+                calculateAndHighlight();
+            }
+        }
+
+        function resetCalculator() {
+            products.forEach(p => {
+                p.price = '';
+                p.qty = '';
+            });
+            renderProducts();
+            showToast("Calculadora reiniciada");
+        }
+
+        // --- RENDERIZADO DE PRODUCTOS EN PANTALLA ---
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+
+            products.forEach((prod, index) => {
+                const card = document.createElement('div');
+                card.id = `card-${prod.id}`;
+                card.className = "product-card bg-white dark:bg-gray-800 rounded-3xl p-4 shadow-sm border-2 border-gray-200 dark:border-gray-700 transition-all duration-300 relative";
+
+                const unitsOptions = UNIT_GROUPS[currentGroup].map(u => 
+                    `<option value="${u.value}" ${prod.unit === u.value ? 'selected' : ''}>${u.label}</option>`
+                ).join('');
+
+                card.innerHTML = `
+                    <!-- Header Card -->
+                    <div class="flex items-center justify-between mb-3">
+                        <input type="text" 
+                               value="${escapeHtml(prod.name)}" 
+                               oninput="updateProduct(${prod.id}, 'name', this.value)"
+                               placeholder="Nombre del producto (opcional)" 
+                               class="font-bold text-gray-800 dark:text-gray-100 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-brand-500 focus:outline-none text-base w-2/3 transition">
+                        
+                        <div class="flex items-center space-x-1">
+                            <span id="badge-${prod.id}" class="hidden text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-500 text-white shadow-sm">
+                                Mejor Opción
+                            </span>
+                            ${products.length > 2 ? `
+                                <button onclick="removeProduct(${prod.id})" class="text-gray-400 hover:text-red-500 p-1.5 rounded-lg transition">
+                                    <i class="fa-solid fa-trash-can text-sm"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Campos de entrada -->
+                    <div class="grid grid-cols-12 gap-2 mb-3">
+                        <!-- Precio -->
+                        <div class="col-span-5">
+                            <label class="block text-[11px] font-semibold text-gray-400 dark:text-gray-400 mb-1">PRECIO ($)</label>
+                            <div class="relative flex items-center">
+                                <span class="absolute left-3 text-gray-400 font-bold">$</span>
+                                <input type="number" 
+                                       step="any"
+                                       inputmode="decimal"
+                                       placeholder="0.00"
+                                       value="${prod.price}"
+                                       oninput="updateProduct(${prod.id}, 'price', this.value)"
+                                       class="w-full pl-7 pr-2 py-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-xl text-lg font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+                            </div>
+                        </div>
+
+                        <!-- Cantidad -->
+                        <div class="col-span-4">
+                            <label class="block text-[11px] font-semibold text-gray-400 dark:text-gray-400 mb-1">CANTIDAD</label>
+                            <input type="number" 
+                                   step="any"
+                                   inputmode="decimal"
+                                   placeholder="Ej: 500"
+                                   value="${prod.qty}"
+                                   oninput="updateProduct(${prod.id}, 'qty', this.value)"
+                                   class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-xl text-lg font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+                        </div>
+
+                        <!-- Unidad -->
+                        <div class="col-span-3">
+                            <label class="block text-[11px] font-semibold text-gray-400 dark:text-gray-400 mb-1">UNIDAD</label>
+                            <select onchange="updateProduct(${prod.id}, 'unit', this.value)"
+                                    class="w-full py-3 px-1.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+                                ${unitsOptions}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Resultado de la Tarjeta -->
+                    <div id="result-${prod.id}" class="mt-2 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Precio unitario:</span>
+                        <span class="font-bold text-sm text-gray-700 dark:text-gray-300"> Ingresa datos...</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            calculateAndHighlight();
+        }
+
+        // --- CÁLCULOS Y COMPARACIÓN ---
+        function calculateAndHighlight() {
+            let validProducts = [];
+
+            // 1. Calcular precio base por unidad estandarizada (ej: por gramo, por ml, por pieza)
+            products.forEach(p => {
+                const price = parseFloat(p.price);
+                const qty = parseFloat(p.qty);
+                const card = document.getElementById(`card-${p.id}`);
+                const badge = document.getElementById(`badge-${p.id}`);
+                const resultDiv = document.getElementById(`result-${p.id}`);
+
+                // Reset estilos
+                if (card) {
+                    card.classList.remove('border-brand-500', 'dark:border-brand-500', 'bg-brand-50/20', 'dark:bg-brand-950/20');
+                    card.classList.add('border-gray-200', 'dark:border-gray-700');
+                }
+                if (badge) badge.classList.add('hidden');
+
+                if (!isNaN(price) && !isNaN(qty) && price > 0 && qty > 0) {
+                    // Obtener factor de conversión
+                    const groupUnits = UNIT_GROUPS[currentGroup];
+                    const unitObj = groupUnits.find(u => u.value === p.unit) || groupUnits[0];
+                    
+                    const totalBaseUnits = qty * unitObj.factor; // Cantidad total en unidad base (g, ml, cm, pza)
+                    const unitPrice = price / totalBaseUnits; // Precio por 1 unidad base
+
+                    validProducts.push({
+                        ...p,
+                        numericPrice: price,
+                        numericQty: qty,
+                        totalBaseUnits: totalBaseUnits,
+                        unitPrice: unitPrice // Precio por 1g, 1ml, etc.
+                    });
+                } else {
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `<span>Precio unitario:</span><span class="font-medium text-gray-400">--</span>`;
+                    }
+                }
+            });
+
+            // Ocultar banner de guardado por defecto
+            document.getElementById('save-banner').classList.add('hidden');
+
+            // 2. Si tenemos al menos 2 productos válidos, comparar
+            if (validProducts.length >= 2) {
+                // Ordenar por precio unitario ascendente (el primero es el más barato)
+                validProducts.sort((a, b) => a.unitPrice - b.unitPrice);
+
+                const bestOption = validProducts[0];
+                const worstOption = validProducts[validProducts.length - 1];
+
+                // Mostrar banner para guardar
+                document.getElementById('save-banner').classList.remove('hidden');
+
+                validProducts.forEach(p => {
+                    const resultDiv = document.getElementById(`result-${p.id}`);
+                    const card = document.getElementById(`card-${p.id}`);
+                    const badge = document.getElementById(`badge-${p.id}`);
+
+                    // Formatear precio amigable (ej: mostrar precio por 1 kg o 100g si son gramos)
+                    const formattedUnitPrice = formatSmartUnitPrice(p.unitPrice, currentGroup);
+
+                    if (p.id === bestOption.id) {
+                        // Calcular % de ahorro respecto a la peor opción o la siguiente
+                        const secondBest = validProducts[1];
+                        const savingsPercent = Math.round(((secondBest.unitPrice - bestOption.unitPrice) / secondBest.unitPrice) * 100);
+
+                        if (card) {
+                            card.classList.remove('border-gray-200', 'dark:border-gray-700');
+                            card.classList.add('border-brand-500', 'dark:border-brand-500', 'bg-brand-50/20', 'dark:bg-brand-950/20');
+                        }
+                        if (badge) {
+                            badge.classList.remove('hidden');
+                            badge.textContent = savingsPercent > 0 ? `¡Ahorras ${savingsPercent}%!` : 'Mejor Opción';
+                        }
+
+                        if (resultDiv) {
+                            resultDiv.innerHTML = `
+                                <span class="font-bold text-brand-600 dark:text-brand-400">Costo estandarizado:</span>
+                                <span class="font-extrabold text-base text-brand-600 dark:text-brand-400">${formattedUnitPrice}</span>
+                            `;
+                        }
+                    } else {
+                        // Calcular % más caro vs la mejor opción
+                        const diffPercent = Math.round(((p.unitPrice - bestOption.unitPrice) / bestOption.unitPrice) * 100);
+
+                        if (resultDiv) {
+                            resultDiv.innerHTML = `
+                                <span>Costo estandarizado:</span>
+                                <div class="text-right">
+                                    <span class="font-bold text-gray-800 dark:text-gray-200">${formattedUnitPrice}</span>
+                                    <span class="text-[10px] block text-red-500 font-semibold">+${diffPercent}% más caro</span>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            } else if (validProducts.length === 1) {
+                // Solo un producto completo, mostrar su unitario sin comparativa
+                const p = validProducts[0];
+                const resultDiv = document.getElementById(`result-${p.id}`);
+                const formattedUnitPrice = formatSmartUnitPrice(p.unitPrice, currentGroup);
+                
+                if (resultDiv) {
+                    resultDiv.innerHTML = `
+                        <span>Costo estandarizado:</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200">${formattedUnitPrice}</span>
+                    `;
+                }
+            }
+        }
+
+        // --- FORMATEADOR INTELIGENTE DE PRECIO UNITARIO ---
+        function formatSmartUnitPrice(pricePerBase, group) {
+            // pricePerBase es precio por 1g, 1ml, 1cm o 1pza
+            if (group === 'weight') {
+                const pricePerKg = pricePerBase * 1000;
+                if (pricePerKg >= 1) {
+                    return `$${pricePerKg.toFixed(2)} / kg`;
+                } else {
+                    return `$${(pricePerBase * 100).toFixed(2)} / 100g`;
+                }
+            } else if (group === 'volume') {
+                const pricePerL = pricePerBase * 1000;
+                if (pricePerL >= 1) {
+                    return `$${pricePerL.toFixed(2)} / Litro`;
+                } else {
+                    return `$${(pricePerBase * 100).toFixed(2)} / 100ml`;
+                }
+            } else if (group === 'length') {
+                return `$${(pricePerBase * 100).toFixed(2)} / Metro`;
+            } else {
+                return `$${pricePerBase.toFixed(2)} / pieza`;
+            }
+        }
+
+        // --- HISTORIAL EN LOCALSTORAGE ---
+        function saveCurrentComparison() {
+            const validProducts = products.filter(p => !isNaN(parseFloat(p.price)) && !isNaN(parseFloat(p.qty)));
+            if (validProducts.length < 2) return;
+
+            // Encontrar el mejor
+            let best = validProducts[0];
+            let minPrice = Infinity;
+
+            validProducts.forEach(p => {
+                const factor = (UNIT_GROUPS[currentGroup].find(u => u.value === p.unit) || {}).factor || 1;
+                const unitPrice = parseFloat(p.price) / (parseFloat(p.qty) * factor);
+                if (unitPrice < minPrice) {
+                    minPrice = unitPrice;
+                    best = p;
+                }
+            });
+
+            const item = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }),
+                category: currentGroup,
+                bestName: best.name || 'Opción',
+                bestPrice: best.price,
+                bestQty: `${best.qty} ${best.unit}`,
+                summary: validProducts.map(p => `${p.name}: $${p.price}/${p.qty}${p.unit}`).join(' vs ')
+            };
+
+            historyData.unshift(item);
+            if (historyData.length > 20) historyData.pop(); // Límitar a 20 items
+
+            localStorage.setItem('comparasuper_history', JSON.stringify(historyData));
+            showToast("Comparación guardada en el historial");
+        }
+
+        function toggleHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            if (modal.classList.contains('hidden')) {
+                renderHistory();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            if (historyData.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-gray-400 dark:text-gray-500">
+                        <i class="fa-solid fa-box-open text-4xl mb-2"></i>
+                        <p class="text-sm">No tienes comparaciones guardadas aún.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = historyData.map(item => `
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl border border-gray-200 dark:border-gray-600 relative">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">${item.date}</span>
+                        <button onclick="deleteHistoryItem(${item.id})" class="text-gray-400 hover:text-red-500 text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-trophy text-amber-500 text-xs"></i>
+                        <span class="text-xs font-bold text-gray-800 dark:text-white">Ganó: ${escapeHtml(item.bestName)} ($${item.bestPrice} por ${item.bestQty})</span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">${escapeHtml(item.summary)}</p>
+                </div>
+            `).join('');
+        }
+
+        function deleteHistoryItem(id) {
+            historyData = historyData.filter(i => i.id !== id);
+            localStorage.setItem('comparasuper_history', JSON.stringify(historyData));
+            renderHistory();
+        }
+
+        function clearHistory() {
+            if (confirm("¿Deseas borrar todo el historial?")) {
+                historyData = [];
+                localStorage.removeItem('comparasuper_history');
+                renderHistory();
+                showToast("Historial borrado");
+            }
+        }
+
+        // --- UTILIDADES ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        function escapeHtml(str) {
+            return str ? str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : '';
+        }
+    </script>
+</body>
+</html>
